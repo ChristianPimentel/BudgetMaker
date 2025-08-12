@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -86,7 +87,7 @@ export default function Dashboard() {
 
           <Button onClick={() => setEditBudgetDialogOpen(true)} variant="outline" size="sm">
             <Settings className="mr-0 md:mr-2 h-4 w-4" />
-            <span className="hidden md:inline">Manage Budget</span>
+            <span className="hidden md:inline">Set Income</span>
           </Button>
           <Button onClick={handleAddReceiptClick} size="sm">
             <PlusCircle className="mr-0 md:mr-2 h-4 w-4" />

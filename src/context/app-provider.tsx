@@ -2,30 +2,21 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Receipt, Budget } from '@/lib/types';
+import type { Receipt, IncomeBudget } from '@/lib/types';
 import { CATEGORIES } from '@/lib/constants';
 import { MoreHorizontal } from 'lucide-react';
 
-const initialBudget: Budget = Object.fromEntries(CATEGORIES.map(c => [c.name, 0]));
-initialBudget['Groceries'] = 500;
-initialBudget['Dining'] = 150;
-initialBudget['Transportation'] = 100;
-initialBudget['Utilities'] = 200;
-initialBudget['Entertainment'] = 100;
-initialBudget['Shopping'] = 250;
-initialBudget['Travel'] = 300;
-initialBudget['Other'] = 50;
-
+const initialIncome = 3000;
 
 interface AppContextType {
   receipts: Receipt[];
-  budget: Budget;
+  monthlyIncome: number;
   addReceipt: (receipt: Omit<Receipt, 'id' | 'date'> & { date: Date | object }) => void;
   updateReceipt: (id: string, receipt: Omit<Receipt, 'id' | 'date'> & { date: Date | object }) => void;
   deleteReceipt: (id: string) => void;
-  updateBudget: (category: string, amount: number) => void;
+  setMonthlyIncome: (amount: number) => void;
   getCategoryIcon: (categoryName: string) => React.ElementType;
 }
 
@@ -33,10 +24,10 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
-  const [budget, setBudget] = useState<Budget>(initialBudget);
+  const [monthlyIncome, setMonthlyIncomeState] = useState<number>(initialIncome);
 
   useEffect(() => {
-    const q = query(collection(db, 'receipts'));
+    const q = collection(db, 'receipts');
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const receiptsData: Receipt[] = [];
       querySnapshot.forEach((doc) => {
@@ -54,13 +45,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    const budgetDocRef = doc(db, 'budget', 'user_budget');
+    const budgetDocRef = doc(db, 'budget', 'user_income_budget');
     const unsubscribe = onSnapshot(budgetDocRef, (doc) => {
       if (doc.exists()) {
-        setBudget(doc.data() as Budget);
+        const data = doc.data() as IncomeBudget;
+        setMonthlyIncomeState(data.monthlyIncome);
       } else {
-        // If budget doesn't exist, create it with initial values
-        setDoc(budgetDocRef, initialBudget);
+        setDoc(budgetDocRef, { monthlyIncome: initialIncome });
       }
     });
 
@@ -94,13 +85,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateBudget = async (category: string, amount: number) => {
+  const setMonthlyIncome = async (amount: number) => {
     try {
-      const budgetDocRef = doc(db, 'budget', 'user_budget');
-      // Use setDoc with merge to update or create fields
-      await setDoc(budgetDocRef, { [category]: amount }, { merge: true });
+      const budgetDocRef = doc(db, 'budget', 'user_income_budget');
+      await setDoc(budgetDocRef, { monthlyIncome: amount }, { merge: true });
     } catch (error) {
-      console.error("Error updating budget: ", error);
+      console.error("Error updating income: ", error);
     }
   };
 
@@ -109,7 +99,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AppContext.Provider value={{ receipts, budget, addReceipt, updateReceipt, deleteReceipt, updateBudget, getCategoryIcon }}>
+    <AppContext.Provider value={{ receipts, monthlyIncome, addReceipt, updateReceipt, deleteReceipt, setMonthlyIncome, getCategoryIcon }}>
       {children}
     </AppContext.Provider>
   );

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -6,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { CATEGORIES } from '@/lib/constants';
-import { ScrollArea } from './ui/scroll-area';
+import { Label } from '@/components/ui/label';
+import { DollarSign } from 'lucide-react';
 
 type EditBudgetDialogProps = {
   open: boolean;
@@ -15,34 +16,30 @@ type EditBudgetDialogProps = {
 };
 
 export default function EditBudgetDialog({ open, onOpenChange }: EditBudgetDialogProps) {
-  const { budget, updateBudget } = useApp();
+  const { monthlyIncome, setMonthlyIncome } = useApp();
   const { toast } = useToast();
-  const [localBudget, setLocalBudget] = useState(budget);
+  const [localIncome, setLocalIncome] = useState(monthlyIncome);
 
   React.useEffect(() => {
     if (open) {
-      setLocalBudget(budget);
+      setLocalIncome(monthlyIncome);
     }
-  }, [budget, open]);
+  }, [monthlyIncome, open]);
 
-  const handleBudgetChange = (category: string, value: string) => {
+  const handleIncomeChange = (value: string) => {
     const amount = Number(value);
     if (!isNaN(amount) && amount >= 0) {
-      setLocalBudget(prev => ({ ...prev, [category]: amount }));
+      setLocalIncome(amount);
     } else if (value === '') {
-      setLocalBudget(prev => ({ ...prev, [category]: 0 }));
+      setLocalIncome(0);
     }
   };
 
   const handleSave = () => {
-    Object.entries(localBudget).forEach(([category, amount]) => {
-      if (budget[category] !== amount) {
-        updateBudget(category, amount);
-      }
-    });
+    setMonthlyIncome(localIncome);
     toast({
-      title: 'Budget Updated',
-      description: 'Your monthly budget has been saved.',
+      title: 'Income Updated',
+      description: 'Your monthly income has been saved.',
     });
     onOpenChange(false);
   };
@@ -51,37 +48,28 @@ export default function EditBudgetDialog({ open, onOpenChange }: EditBudgetDialo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Manage Monthly Budget</DialogTitle>
+          <DialogTitle>Set Monthly Income</DialogTitle>
           <DialogDescription>
-            Set your spending limits for each category.
+            Enter your total monthly income to calculate your budget.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="max-h-[60vh] -mx-6 px-6">
-          <div className="space-y-4 py-4 pr-1">
-            {CATEGORIES.map(category => (
-              <div key={category.name} className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="p-1 bg-muted rounded-md">
-                    <category.icon className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <label htmlFor={`budget-${category.name}`} className="font-medium whitespace-nowrap">{category.name}</label>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-muted-foreground">$</span>
-                  <Input
-                    id={`budget-${category.name}`}
-                    type="number"
-                    min="0"
-                    placeholder="0.00"
-                    value={localBudget[category.name] || ''}
-                    onChange={(e) => handleBudgetChange(category.name, e.target.value)}
-                    className="w-32"
-                  />
-                </div>
+        <div className="py-4">
+            <div className="space-y-2">
+              <Label htmlFor="income" className="font-medium">Monthly Income</Label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  id="income"
+                  type="number"
+                  min="0"
+                  placeholder="0.00"
+                  value={localIncome || ''}
+                  onChange={(e) => handleIncomeChange(e.target.value)}
+                  className="pl-10"
+                />
               </div>
-            ))}
-          </div>
-        </ScrollArea>
+            </div>
+        </div>
         <DialogFooter>
           <DialogClose asChild>
             <Button type="button" variant="outline">Cancel</Button>

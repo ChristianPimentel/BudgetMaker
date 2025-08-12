@@ -1,3 +1,4 @@
+
 import type { LucideIcon } from 'lucide-react';
 
 export type Category = {
@@ -18,3 +19,7 @@ export type Receipt = {
 export type Budget = {
   [category: string]: number;
 };
+
+export type IncomeBudget = {
+  monthlyIncome: number;
+}
