@@ -36,7 +36,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [budget, setBudget] = useState<Budget>(initialBudget);
 
   useEffect(() => {
-    const q = query(collection(db, 'receipts'), orderBy('date', 'desc'));
+    const q = query(collection(db, 'receipts'));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const receiptsData: Receipt[] = [];
       querySnapshot.forEach((doc) => {
