@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { Receipt, Budget } from '@/lib/types';
 import { CATEGORIES } from '@/lib/constants';
 import { MoreHorizontal } from 'lucide-react';
@@ -36,8 +37,53 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [receipts, setReceipts] = useState<Receipt[]>(initialReceipts);
-  const [budget, setBudget] = useState<Budget>(initialBudget);
+  const [receipts, setReceipts] = useState<Receipt[]>(() => {
+    if (typeof window === 'undefined') {
+      return initialReceipts;
+    }
+    try {
+      const storedReceipts = window.localStorage.getItem('receipts');
+      if (storedReceipts) {
+        // Need to parse dates since they are stored as strings
+        return JSON.parse(storedReceipts).map((r: any) => ({...r, date: new Date(r.date)}));
+      }
+    } catch (error) {
+      console.error('Error reading receipts from localStorage', error);
+    }
+    return initialReceipts;
+  });
+
+  const [budget, setBudget] = useState<Budget>(() => {
+    if (typeof window === 'undefined') {
+      return initialBudget;
+    }
+    try {
+      const storedBudget = window.localStorage.getItem('budget');
+      if (storedBudget) {
+        return JSON.parse(storedBudget);
+      }
+    } catch (error) {
+      console.error('Error reading budget from localStorage', error);
+    }
+    return initialBudget;
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('receipts', JSON.stringify(receipts));
+    } catch (error) {
+      console.error('Error writing receipts to localStorage', error);
+    }
+  }, [receipts]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('budget', JSON.stringify(budget));
+    } catch (error) {
+      console.error('Error writing budget to localStorage', error);
+    }
+  }, [budget]);
+
 
   const addReceipt = (receipt: Omit<Receipt, 'id'>) => {
     setReceipts(prev => [{ ...receipt, id: new Date().toISOString() + Math.random() }, ...prev]);
