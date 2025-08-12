@@ -2,16 +2,11 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc, getDocs, query, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import type { Receipt, Budget } from '@/lib/types';
 import { CATEGORIES } from '@/lib/constants';
 import { MoreHorizontal } from 'lucide-react';
-
-const initialReceipts: Receipt[] = [
-  { id: '1', vendor: 'SuperMart', description: 'Weekly groceries', date: new Date(new Date().setDate(new Date().getDate() - 5)), amount: 125.43, category: 'Groceries' },
-  { id: '2', vendor: 'The Corner Cafe', description: 'Coffee with friends', date: new Date(new Date().setDate(new Date().getDate() - 6)), amount: 12.50, category: 'Dining' },
-  { id: '3', vendor: 'Metro Transit', description: 'Monthly pass', date: new Date(new Date().setDate(new Date().getDate() - 20)), amount: 95.00, category: 'Transportation' },
-  { id: '4', vendor: 'Cineplex', description: 'Movie night', date: new Date(new Date().setDate(new Date().getDate() - 2)), amount: 45.00, category: 'Entertainment' },
-];
 
 const initialBudget: Budget = Object.fromEntries(CATEGORIES.map(c => [c.name, 0]));
 initialBudget['Groceries'] = 500;
@@ -27,8 +22,8 @@ initialBudget['Other'] = 50;
 interface AppContextType {
   receipts: Receipt[];
   budget: Budget;
-  addReceipt: (receipt: Omit<Receipt, 'id'>) => void;
-  updateReceipt: (id: string, receipt: Omit<Receipt, 'id'>) => void;
+  addReceipt: (receipt: Omit<Receipt, 'id' | 'date'> & { date: Date | object }) => void;
+  updateReceipt: (id: string, receipt: Omit<Receipt, 'id' | 'date'> & { date: Date | object }) => void;
   deleteReceipt: (id: string) => void;
   updateBudget: (category: string, amount: number) => void;
   getCategoryIcon: (categoryName: string) => React.ElementType;
@@ -37,68 +32,76 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [receipts, setReceipts] = useState<Receipt[]>(() => {
-    if (typeof window === 'undefined') {
-      return initialReceipts;
-    }
-    try {
-      const storedReceipts = window.localStorage.getItem('receipts');
-      if (storedReceipts) {
-        // Need to parse dates since they are stored as strings
-        return JSON.parse(storedReceipts).map((r: any) => ({...r, date: new Date(r.date)}));
-      }
-    } catch (error) {
-      console.error('Error reading receipts from localStorage', error);
-    }
-    return initialReceipts;
-  });
-
-  const [budget, setBudget] = useState<Budget>(() => {
-    if (typeof window === 'undefined') {
-      return initialBudget;
-    }
-    try {
-      const storedBudget = window.localStorage.getItem('budget');
-      if (storedBudget) {
-        return JSON.parse(storedBudget);
-      }
-    } catch (error) {
-      console.error('Error reading budget from localStorage', error);
-    }
-    return initialBudget;
-  });
+  const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [budget, setBudget] = useState<Budget>(initialBudget);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem('receipts', JSON.stringify(receipts));
-    } catch (error) {
-      console.error('Error writing receipts to localStorage', error);
-    }
-  }, [receipts]);
+    const q = query(collection(db, 'receipts'), orderBy('date', 'desc'));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const receiptsData: Receipt[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        receiptsData.push({ 
+          id: doc.id, 
+          ...data,
+          date: data.date.toDate() 
+        } as Receipt);
+      });
+      setReceipts(receiptsData);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
+    const budgetDocRef = doc(db, 'budget', 'user_budget');
+    const unsubscribe = onSnapshot(budgetDocRef, (doc) => {
+      if (doc.exists()) {
+        setBudget(doc.data() as Budget);
+      } else {
+        // If budget doesn't exist, create it with initial values
+        setDoc(budgetDocRef, initialBudget);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+
+  const addReceipt = async (receipt: Omit<Receipt, 'id'>) => {
     try {
-      window.localStorage.setItem('budget', JSON.stringify(budget));
+      await addDoc(collection(db, 'receipts'), receipt);
     } catch (error) {
-      console.error('Error writing budget to localStorage', error);
+      console.error("Error adding document: ", error);
     }
-  }, [budget]);
-
-
-  const addReceipt = (receipt: Omit<Receipt, 'id'>) => {
-    setReceipts(prev => [{ ...receipt, id: new Date().toISOString() + Math.random() }, ...prev]);
   };
 
-  const updateReceipt = (id: string, updatedReceipt: Omit<Receipt, 'id'>) => {
-    setReceipts(prev => prev.map(r => r.id === id ? { ...updatedReceipt, id } : r));
+  const updateReceipt = async (id: string, updatedReceipt: Omit<Receipt, 'id'>) => {
+    try {
+      const receiptDoc = doc(db, 'receipts', id);
+      await updateDoc(receiptDoc, updatedReceipt);
+    } catch (error) {
+      console.error("Error updating document: ", error);
+    }
   };
   
-  const deleteReceipt = (id: string) => {
-    setReceipts(prev => prev.filter(r => r.id !== id));
+  const deleteReceipt = async (id: string) => {
+    try {
+      const receiptDoc = doc(db, 'receipts', id);
+      await deleteDoc(receiptDoc);
+    } catch (error) {
+      console.error("Error deleting document: ", error);
+    }
   };
 
-  const updateBudget = (category: string, amount: number) => {
-    setBudget(prev => ({ ...prev, [category]: amount }));
+  const updateBudget = async (category: string, amount: number) => {
+    try {
+      const budgetDocRef = doc(db, 'budget', 'user_budget');
+      // Use setDoc with merge to update or create fields
+      await setDoc(budgetDocRef, { [category]: amount }, { merge: true });
+    } catch (error) {
+      console.error("Error updating budget: ", error);
+    }
   };
 
   const getCategoryIcon = (categoryName: string) => {
