@@ -6,7 +6,7 @@ import { useApp } from '@/context/app-provider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from './ui/separator';
-import { PiggyBank, HandCoins, ShieldCheck, PartyPopper } from 'lucide-react';
+import { PiggyBank, HandCoins, ShieldCheck, PartyPopper, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const INCOME_CATEGORIES = [
@@ -47,6 +47,20 @@ export default function BudgetOverview() {
     currency: 'USD',
   });
 
+  const spendingBudget = monthlyIncome * (INCOME_CATEGORIES.find(c => c.name === 'Spending')?.percentage || 0);
+  const funBudget = monthlyIncome * (INCOME_CATEGORIES.find(c => c.name === 'Fun')?.percentage || 0);
+  
+  const spentOnSpending = spendingByCategory['Spending'] || 0;
+  const spentOnFun = spendingByCategory['Fun'] || 0;
+  
+  const isSpendingOverBudget = spentOnSpending > spendingBudget;
+  const spendingOverage = isSpendingOverBudget ? spentOnSpending - spendingBudget : 0;
+  
+  const flexibleSpendingBudget = spendingBudget + funBudget;
+  const totalFlexibleSpent = spentOnSpending + spentOnFun;
+  const remainingFlexible = flexibleSpendingBudget - totalFlexibleSpent;
+  const flexibleProgress = flexibleSpendingBudget > 0 ? (totalFlexibleSpent / flexibleSpendingBudget) * 100 : 0;
+
   return (
     <Card>
       <CardHeader>
@@ -77,33 +91,52 @@ export default function BudgetOverview() {
           <Separator />
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {SPEND_CATEGORIES.map(categoryName => {
-              const categoryInfo = INCOME_CATEGORIES.find(c => c.name === categoryName);
-              if (!categoryInfo) return null;
+            {!isSpendingOverBudget ? (
+              SPEND_CATEGORIES.map(categoryName => {
+                const categoryInfo = INCOME_CATEGORIES.find(c => c.name === categoryName);
+                if (!categoryInfo) return null;
 
-              const budget = monthlyIncome * categoryInfo.percentage;
-              const spent = spendingByCategory[categoryName] || 0;
-              const remaining = budget - spent;
-              const progress = budget > 0 ? (spent / budget) * 100 : 0;
-              
-              return (
-                <div key={categoryName} className="space-y-2">
-                  <div className="flex justify-between items-baseline">
-                    <h3 className="font-semibold text-lg flex items-center gap-2">
-                      <categoryInfo.icon className={cn("w-5 h-5", categoryInfo.color)} />
-                      {categoryName}
-                    </h3>
-                    <span className={remaining >= 0 ? 'text-accent-foreground font-medium' : 'text-destructive font-medium'}>
-                      {remaining >= 0 ? `${currencyFormatter.format(remaining)} left` : `${currencyFormatter.format(Math.abs(remaining))} over`}
-                    </span>
+                const budget = monthlyIncome * categoryInfo.percentage;
+                const spent = spendingByCategory[categoryName] || 0;
+                const remaining = budget - spent;
+                const progress = budget > 0 ? (spent / budget) * 100 : 0;
+                
+                return (
+                  <div key={categoryName} className="space-y-2">
+                    <div className="flex justify-between items-baseline">
+                      <h3 className="font-semibold text-lg flex items-center gap-2">
+                        <categoryInfo.icon className={cn("w-5 h-5", categoryInfo.color)} />
+                        {categoryName}
+                      </h3>
+                      <span className={remaining >= 0 ? 'text-accent-foreground font-medium' : 'text-destructive font-medium'}>
+                        {remaining >= 0 ? `${currencyFormatter.format(remaining)} left` : `${currencyFormatter.format(Math.abs(remaining))} over`}
+                      </span>
+                    </div>
+                    <Progress value={progress > 100 ? 100 : progress} className={cn("h-3", categoryInfo.progressBg)} />
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>{`${currencyFormatter.format(spent)} of ${currencyFormatter.format(budget)}`}</span>
+                    </div>
                   </div>
-                  <Progress value={progress > 100 ? 100 : progress} className={cn("h-3", categoryInfo.progressBg)} />
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>{`${currencyFormatter.format(spent)} of ${currencyFormatter.format(budget)}`}</span>
-                  </div>
+                );
+              })
+            ) : (
+              <div className="space-y-2 md:col-span-2">
+                <div className="flex justify-between items-baseline">
+                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                    <Wallet className="w-5 h-5 text-purple-500" />
+                    Flexible Spending (Spending + Fun)
+                  </h3>
+                  <span className={remainingFlexible >= 0 ? 'text-accent-foreground font-medium' : 'text-destructive font-medium'}>
+                    {remainingFlexible >= 0 ? `${currencyFormatter.format(remainingFlexible)} left` : `${currencyFormatter.format(Math.abs(remainingFlexible))} over`}
+                  </span>
                 </div>
-              );
-            })}
+                <Progress value={flexibleProgress > 100 ? 100 : flexibleProgress} className={cn("h-3", '[&>div]:bg-purple-500')} />
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>{`${currencyFormatter.format(totalFlexibleSpent)} of ${currencyFormatter.format(flexibleSpendingBudget)}`}</span>
+                  <span className="text-xs text-amber-600">{`(${currencyFormatter.format(spendingOverage)} over from Spending)`}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <Separator />
