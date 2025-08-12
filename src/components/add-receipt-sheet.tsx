@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
@@ -165,14 +166,14 @@ export default function AddReceiptSheet({ open, onOpenChange, receiptToEdit }: A
     if (isEditing && receiptToEdit) {
       updateReceipt(receiptToEdit.id, values);
       toast({
-        title: 'Receipt Updated!',
-        description: 'Your receipt has been successfully updated.',
+        title: 'Expense Updated!',
+        description: 'Your expense has been successfully updated.',
       });
     } else {
       addReceipt(values);
       toast({
-        title: 'Receipt Added!',
-        description: `${values.vendor} receipt for $${values.amount.toFixed(2)} has been saved.`,
+        title: 'Expense Added!',
+        description: `${values.vendor} expense for $${values.amount.toFixed(2)} has been saved.`,
       });
     }
     
@@ -184,11 +185,11 @@ export default function AddReceiptSheet({ open, onOpenChange, receiptToEdit }: A
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="sm:max-w-lg overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>{isEditing ? 'Edit Receipt' : 'Add a New Receipt'}</SheetTitle>
+            <SheetTitle>{isEditing ? 'Edit Expense' : 'Add a New Expense'}</SheetTitle>
             <SheetDescription>
               {isEditing 
-                ? 'Update the details of your receipt below.'
-                : 'Enter receipt details below or upload an image to have it automatically filled.'
+                ? 'Update the details of your expense below.'
+                : 'Enter expense details below or upload an image to have it automatically filled.'
               }
             </SheetDescription>
           </SheetHeader>
@@ -321,7 +322,7 @@ export default function AddReceiptSheet({ open, onOpenChange, receiptToEdit }: A
                 </SheetClose>
                 <Button type="submit" disabled={form.formState.isSubmitting || isExtracting}>
                   {(form.formState.isSubmitting || isExtracting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isEditing ? 'Save Changes' : 'Save Receipt'}
+                  {isEditing ? 'Save Changes' : 'Save Expense'}
                 </Button>
               </SheetFooter>
             </form>

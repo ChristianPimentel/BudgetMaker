@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -53,8 +54,8 @@ export default function ReceiptsList({ onEditReceipt }: ReceiptsListProps) {
   const handleDelete = (id: string) => {
     deleteReceipt(id);
     toast({
-      title: 'Receipt Deleted',
-      description: 'The receipt has been successfully removed.',
+      title: 'Expense Deleted',
+      description: 'The expense has been successfully removed.',
     });
   };
   
@@ -75,8 +76,8 @@ export default function ReceiptsList({ onEditReceipt }: ReceiptsListProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>All Receipts</CardTitle>
-        <CardDescription>A list of all your recorded receipts.</CardDescription>
+        <CardTitle>All Expenses</CardTitle>
+        <CardDescription>A list of all your recorded expenses.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="border rounded-md">
@@ -130,7 +131,7 @@ export default function ReceiptsList({ onEditReceipt }: ReceiptsListProps) {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete this receipt from your records.
+                              This action cannot be undone. This will permanently delete this expense from your records.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -147,7 +148,7 @@ export default function ReceiptsList({ onEditReceipt }: ReceiptsListProps) {
               }) : (
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center">
-                    No receipts found. Add one to get started!
+                    No expenses found. Add one to get started!
                   </TableCell>
                 </TableRow>
               )}

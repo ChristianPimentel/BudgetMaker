@@ -91,7 +91,7 @@ export default function Dashboard() {
           </Button>
           <Button onClick={handleAddReceiptClick} size="sm">
             <PlusCircle className="mr-0 md:mr-2 h-4 w-4" />
-            <span className="hidden md:inline">Add Receipt</span>
+            <span className="hidden md:inline">Add Expense</span>
           </Button>
         </div>
       </header>
