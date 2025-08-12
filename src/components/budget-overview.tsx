@@ -6,7 +6,7 @@ import { useApp } from '@/context/app-provider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from './ui/separator';
-import { PiggyBank, HandCoins, ShieldCheck, PartyPopper, Wallet } from 'lucide-react';
+import { PiggyBank, HandCoins, ShieldCheck, PartyPopper, Wallet, Landmark } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const INCOME_CATEGORIES = [
@@ -61,6 +61,8 @@ export default function BudgetOverview() {
   const remainingFlexible = flexibleSpendingBudget - totalFlexibleSpent;
   const flexibleProgress = flexibleSpendingBudget > 0 ? (totalFlexibleSpent / flexibleSpendingBudget) * 100 : 0;
 
+  const totalRemaining = monthlyIncome - totalSpent;
+
   return (
     <Card>
       <CardHeader>
@@ -77,15 +79,22 @@ export default function BudgetOverview() {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          <div className="space-y-2">
-            <div className="flex justify-between items-baseline">
-              <h3 className="font-semibold text-lg">Total Spent</h3>
-              <span className="text-lg font-bold text-primary">{`${spendingPercentage.toFixed(1)}%`}</span>
-            </div>
-            <Progress value={spendingPercentage > 100 ? 100 : spendingPercentage} className="h-3" />
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>{`${currencyFormatter.format(totalSpent)} of ${currencyFormatter.format(monthlyIncome)}`}</span>
-            </div>
+          <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <div className="flex justify-between items-baseline">
+                  <h3 className="font-semibold text-lg">Total Spent</h3>
+                  <span className="text-lg font-bold text-primary">{`${spendingPercentage.toFixed(1)}%`}</span>
+                </div>
+                <Progress value={spendingPercentage > 100 ? 100 : spendingPercentage} className="h-3" />
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>{`${currencyFormatter.format(totalSpent)} of ${currencyFormatter.format(monthlyIncome)}`}</span>
+                </div>
+              </div>
+              <div className="space-y-2 text-right">
+                <h3 className="font-semibold text-lg">Total Remaining</h3>
+                <p className="text-3xl font-bold text-emerald-600">{currencyFormatter.format(totalRemaining)}</p>
+                <p className="text-sm text-muted-foreground">including Savings & Emergency</p>
+              </div>
           </div>
           
           <Separator />
