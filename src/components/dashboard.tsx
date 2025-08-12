@@ -46,6 +46,7 @@ export default function Dashboard() {
       return false;
     });
 
+    // Create raw data sheet
     const dataToExport = filteredReceipts.map(r => ({
       Date: format(new Date(r.date), 'yyyy-MM-dd'),
       Vendor: r.vendor,
@@ -53,12 +54,30 @@ export default function Dashboard() {
       Category: r.category,
       Amount: r.amount,
     }));
+    const receiptsWorksheet = XLSX.utils.json_to_sheet(dataToExport);
 
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    // Create summary data
+    const summaryData = filteredReceipts.reduce((acc, r) => {
+      if (!acc[r.category]) {
+        acc[r.category] = 0;
+      }
+      acc[r.category] += r.amount;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const summaryArray = Object.entries(summaryData).map(([category, total]) => ({
+      Category: category,
+      Total: total,
+    }));
+    
+    const summaryWorksheet = XLSX.utils.json_to_sheet(summaryArray);
+
+    // Create workbook and add sheets
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Receipts');
+    XLSX.utils.book_append_sheet(workbook, receiptsWorksheet, 'All Expenses');
+    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Summary');
 
-    const fileName = `receipts_export_${period}_${period === 'month' ? format(currentDate, 'MMMM_yyyy') : currentYear}.xlsx`;
+    const fileName = `budget_export_${period}_${period === 'month' ? format(currentDate, 'MMMM_yyyy') : currentYear}.xlsx`;
     XLSX.writeFile(workbook, fileName);
   };
 
