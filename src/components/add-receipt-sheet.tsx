@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import type { Receipt } from '@/lib/types';
 import CameraCapture from './camera-capture';
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 const receiptSchema = z.object({
   vendor: z.string().min(1, 'Vendor is required'),
@@ -40,12 +41,15 @@ type AddReceiptSheetProps = {
 };
 
 export default function AddReceiptSheet({ open, onOpenChange, receiptToEdit }: AddReceiptSheetProps) {
-  const { addReceipt, updateReceipt } = useApp();
+  const { addReceipt, updateReceipt, receipts } = useApp();
   const { toast } = useToast();
   const [isCategorizing, setIsCategorizing] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [vendorSuggestions, setVendorSuggestions] = useState<string[]>([]);
+  const [isVendorPopoverOpen, setIsVendorPopoverOpen] = useState(false);
+
 
   const isEditing = !!receiptToEdit;
 
@@ -59,11 +63,31 @@ export default function AddReceiptSheet({ open, onOpenChange, receiptToEdit }: A
       category: '',
     },
   });
+  
+  const watchedVendor = form.watch('vendor');
+
+  useEffect(() => {
+    if (watchedVendor && watchedVendor.length > 0) {
+      const uniqueVendors = [...new Set(receipts.map(r => r.vendor).filter(Boolean))];
+      const filtered = uniqueVendors
+        .filter(v => v.toLowerCase().includes(watchedVendor.toLowerCase()))
+        .filter(v => v.toLowerCase() !== watchedVendor.toLowerCase())
+        .slice(0, 5); 
+      setVendorSuggestions(filtered);
+      setIsVendorPopoverOpen(filtered.length > 0);
+    } else {
+      setIsVendorPopoverOpen(false);
+      setVendorSuggestions([]);
+    }
+  }, [watchedVendor, receipts]);
 
   useEffect(() => {
     if (open) {
       if (isEditing && receiptToEdit) {
-        form.reset(receiptToEdit);
+        form.reset({
+          ...receiptToEdit,
+          description: receiptToEdit.description || '',
+        });
       } else {
         form.reset({
           vendor: '',
@@ -79,7 +103,7 @@ export default function AddReceiptSheet({ open, onOpenChange, receiptToEdit }: A
   const handleAutoCategorize = useCallback(async () => {
     const vendor = form.getValues('vendor');
     const description = form.getValues('description');
-    if (!vendor || !description) return;
+    if (!vendor) return;
 
     setIsCategorizing(true);
     try {
@@ -195,19 +219,45 @@ export default function AddReceiptSheet({ open, onOpenChange, receiptToEdit }: A
           </SheetHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
-              <FormField
-                control={form.control}
-                name="vendor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Vendor</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Starbucks" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+               <Popover open={isVendorPopoverOpen} onOpenChange={setIsVendorPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <div className="relative">
+                    <FormField
+                      control={form.control}
+                      name="vendor"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Vendor</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. Starbucks" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                  <Command>
+                    <CommandList>
+                      <CommandGroup>
+                        {vendorSuggestions.map(suggestion => (
+                          <CommandItem
+                            key={suggestion}
+                            value={suggestion}
+                            onSelect={(currentValue) => {
+                              form.setValue('vendor', currentValue, { shouldValidate: true });
+                              setIsVendorPopoverOpen(false);
+                            }}
+                          >
+                            {suggestion}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               <FormField
                 control={form.control}
                 name="description"
@@ -337,3 +387,5 @@ export default function AddReceiptSheet({ open, onOpenChange, receiptToEdit }: A
     </>
   );
 }
+
+    

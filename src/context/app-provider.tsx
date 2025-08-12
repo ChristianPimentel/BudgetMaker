@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Receipt, IncomeBudget } from '@/lib/types';
 import { CATEGORIES } from '@/lib/constants';
@@ -27,7 +27,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [monthlyIncome, setMonthlyIncomeState] = useState<number>(initialIncome);
 
   useEffect(() => {
-    const q = collection(db, 'receipts');
+    const q = query(collection(db, 'receipts'));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const receiptsData: Receipt[] = [];
       querySnapshot.forEach((doc) => {
@@ -112,3 +112,5 @@ export const useApp = () => {
   }
   return context;
 };
+
+    
