@@ -29,6 +29,8 @@ export default function EditBudgetDialog({ open, onOpenChange }: EditBudgetDialo
     const amount = Number(value);
     if (!isNaN(amount) && amount >= 0) {
       setLocalBudget(prev => ({ ...prev, [category]: amount }));
+    } else if (value === '') {
+      setLocalBudget(prev => ({ ...prev, [category]: 0 }));
     }
   };
 
