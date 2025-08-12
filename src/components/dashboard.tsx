@@ -66,7 +66,7 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col h-full bg-background">
       <header className="flex items-center justify-between p-4 border-b bg-card shadow-sm sticky top-0 z-10">
-        <h1 className="text-xl md:text-2xl font-bold font-headline text-primary-foreground bg-primary px-3 py-1 rounded-md shadow">Receipt Wrangler</h1>
+        <h1 className="text-xl md:text-2xl font-bold font-headline text-primary-foreground bg-primary px-3 py-1 rounded-md shadow">Budget Maker</h1>
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

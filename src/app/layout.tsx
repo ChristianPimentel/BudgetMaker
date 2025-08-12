@@ -7,7 +7,7 @@ import { AppProvider } from '@/context/app-provider';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'Receipt Wrangler',
+  title: 'Budget Maker',
   description: 'Take all your receipts and compare them with your budget for the month.',
 };
 
