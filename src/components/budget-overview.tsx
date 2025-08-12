@@ -35,6 +35,12 @@ export default function BudgetOverview() {
       return acc;
     }, {} as Record<string, number>);
   }, [receipts]);
+
+  const totalSpent = React.useMemo(() => {
+    return Object.values(spendingByCategory).reduce((sum, amount) => sum + amount, 0);
+  }, [spendingByCategory]);
+
+  const spendingPercentage = monthlyIncome > 0 ? (totalSpent / monthlyIncome) * 100 : 0;
   
   const currencyFormatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -57,6 +63,19 @@ export default function BudgetOverview() {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
+          <div className="space-y-2">
+            <div className="flex justify-between items-baseline">
+              <h3 className="font-semibold text-lg">Total Spent</h3>
+              <span className="text-lg font-bold text-primary">{`${spendingPercentage.toFixed(1)}%`}</span>
+            </div>
+            <Progress value={spendingPercentage > 100 ? 100 : spendingPercentage} className="h-3" />
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>{`${currencyFormatter.format(totalSpent)} of ${currencyFormatter.format(monthlyIncome)}`}</span>
+            </div>
+          </div>
+          
+          <Separator />
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {SPEND_CATEGORIES.map(categoryName => {
               const categoryInfo = INCOME_CATEGORIES.find(c => c.name === categoryName);
