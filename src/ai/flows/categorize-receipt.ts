@@ -33,7 +33,7 @@ const prompt = ai.definePrompt({
   output: {schema: CategorizeReceiptOutputSchema},
   prompt: `You are an expert financial advisor. You will categorize receipts based on the vendor name and description.
 
-  Here are the categories you can use: Groceries, Dining, Transportation, Utilities, Entertainment, Shopping, Travel, Other
+  Here are the categories you can use: Spending, Fun
 
   Vendor Name: {{{vendorName}}}
   Description: {{{description}}}

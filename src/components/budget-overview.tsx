@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Separator } from './ui/separator';
 import { PiggyBank, HandCoins, ShieldCheck, PartyPopper } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const INCOME_CATEGORIES = [
   { name: 'Spending', percentage: 0.50, icon: HandCoins, color: 'text-sky-500', progressBg: '[&>div]:bg-sky-500' },
@@ -15,26 +16,30 @@ const INCOME_CATEGORIES = [
   { name: 'Fun', percentage: 0.30, icon: PartyPopper, color: 'text-rose-500', progressBg: '[&>div]:bg-rose-500' },
 ]
 
+const SPEND_CATEGORIES = ['Spending', 'Fun'];
+
 export default function BudgetOverview() {
   const { monthlyIncome, receipts } = useApp();
 
-  const totalSpending = React.useMemo(() => {
+  const spendingByCategory = React.useMemo(() => {
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
 
-    return receipts
-      .filter(r => r.date.getMonth() === currentMonth && r.date.getFullYear() === currentYear)
-      .reduce((acc, receipt) => acc + receipt.amount, 0);
-  }, [receipts]);
+    const monthlyReceipts = receipts
+      .filter(r => r.date.getMonth() === currentMonth && r.date.getFullYear() === currentYear);
 
+    return SPEND_CATEGORIES.reduce((acc, category) => {
+      acc[category] = monthlyReceipts
+        .filter(r => r.category === category)
+        .reduce((sum, r) => sum + r.amount, 0);
+      return acc;
+    }, {} as Record<string, number>);
+  }, [receipts]);
+  
   const currencyFormatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
   });
-  
-  const spendingBudget = monthlyIncome * (INCOME_CATEGORIES.find(c => c.name === 'Spending')?.percentage || 0);
-  const remainingSpending = spendingBudget - totalSpending;
-  const spendingProgress = spendingBudget > 0 ? (totalSpending / spendingBudget) * 100 : 0;
 
   return (
     <Card>
@@ -52,19 +57,36 @@ export default function BudgetOverview() {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          <div className="space-y-2">
-            <div className="flex justify-between items-baseline">
-              <h3 className="font-semibold text-lg">Total Spending</h3>
-              <span className={remainingSpending >= 0 ? 'text-accent-foreground font-medium' : 'text-destructive font-medium'}>
-                {remainingSpending >= 0 ? `${currencyFormatter.format(remainingSpending)} left` : `${currencyFormatter.format(Math.abs(remainingSpending))} over`}
-              </span>
-            </div>
-            <Progress value={spendingProgress > 100 ? 100 : spendingProgress} className="h-3 [&>div]:bg-primary" />
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>{`${currencyFormatter.format(totalSpending)} of ${currencyFormatter.format(spendingBudget)}`}</span>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {SPEND_CATEGORIES.map(categoryName => {
+              const categoryInfo = INCOME_CATEGORIES.find(c => c.name === categoryName);
+              if (!categoryInfo) return null;
+
+              const budget = monthlyIncome * categoryInfo.percentage;
+              const spent = spendingByCategory[categoryName] || 0;
+              const remaining = budget - spent;
+              const progress = budget > 0 ? (spent / budget) * 100 : 0;
+              
+              return (
+                <div key={categoryName} className="space-y-2">
+                  <div className="flex justify-between items-baseline">
+                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                      <categoryInfo.icon className={cn("w-5 h-5", categoryInfo.color)} />
+                      {categoryName}
+                    </h3>
+                    <span className={remaining >= 0 ? 'text-accent-foreground font-medium' : 'text-destructive font-medium'}>
+                      {remaining >= 0 ? `${currencyFormatter.format(remaining)} left` : `${currencyFormatter.format(Math.abs(remaining))} over`}
+                    </span>
+                  </div>
+                  <Progress value={progress > 100 ? 100 : progress} className={cn("h-3", categoryInfo.progressBg)} />
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>{`${currencyFormatter.format(spent)} of ${currencyFormatter.format(budget)}`}</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          
+
           <Separator />
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8">
