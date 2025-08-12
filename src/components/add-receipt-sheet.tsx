@@ -17,6 +17,7 @@ import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CATEGORIES } from '@/lib/constants';
 import { categorizeReceipt } from '@/ai/flows/categorize-receipt';
+import { extractReceiptData } from '@/ai/flows/extract-receipt-data';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -38,6 +39,7 @@ export default function AddReceiptSheet({ open, onOpenChange }: AddReceiptSheetP
   const { addReceipt } = useApp();
   const { toast } = useToast();
   const [isCategorizing, setIsCategorizing] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<z.infer<typeof receiptSchema>>({
@@ -83,6 +85,50 @@ export default function AddReceiptSheet({ open, onOpenChange }: AddReceiptSheetP
     }
   }, [form, toast]);
 
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsExtracting(true);
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+      const imageDataUri = reader.result as string;
+      try {
+        const result = await extractReceiptData({ imageDataUri });
+        form.setValue('vendor', result.vendor, { shouldValidate: true });
+        form.setValue('description', result.description, { shouldValidate: true });
+        form.setValue('amount', result.amount, { shouldValidate: true });
+        toast({
+          title: 'Data Extracted!',
+          description: 'We filled in the form with data from your receipt.',
+        });
+      } catch (error) {
+        console.error(error);
+        toast({
+          variant: 'destructive',
+          title: 'Extraction Failed',
+          description: 'We could not extract data from the image. Please fill it out manually.',
+        });
+      } finally {
+        setIsExtracting(false);
+        // Reset file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    };
+    reader.onerror = (error) => {
+      console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'File Read Error',
+        description: 'Could not read the selected file.',
+      });
+      setIsExtracting(false);
+    };
+  };
+
   function onSubmit(values: z.infer<typeof receiptSchema>) {
     addReceipt(values);
     toast({
@@ -104,7 +150,7 @@ export default function AddReceiptSheet({ open, onOpenChange }: AddReceiptSheetP
         <SheetHeader>
           <SheetTitle>Add a New Receipt</SheetTitle>
           <SheetDescription>
-            Enter receipt details below. Use the magic wand to auto-categorize.
+            Enter receipt details below or upload an image to have it automatically filled.
           </SheetDescription>
         </SheetHeader>
         <Form {...form}>
@@ -214,22 +260,22 @@ export default function AddReceiptSheet({ open, onOpenChange }: AddReceiptSheetP
             <FormItem>
               <FormLabel>Receipt Image</FormLabel>
               <FormControl>
-                 <Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()}>
-                   <Upload className="mr-2 h-4 w-4" />
-                   Upload an image
+                 <Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()} disabled={isExtracting}>
+                   {isExtracting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                   {isExtracting ? 'Extracting...' : 'Upload an image'}
                  </Button>
               </FormControl>
-              <Input ref={fileInputRef} type="file" className="hidden" accept="image/*" />
+              <Input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
               <FormDescription>
-                (Optional) Image upload is for record-keeping only.
+                Upload an image to automatically fill vendor, description, and amount.
               </FormDescription>
             </FormItem>
             <SheetFooter className="pt-4">
               <SheetClose asChild>
                 <Button type="button" variant="ghost">Cancel</Button>
               </SheetClose>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button type="submit" disabled={form.formState.isSubmitting || isExtracting}>
+                {(form.formState.isSubmitting || isExtracting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Receipt
               </Button>
             </SheetFooter>
