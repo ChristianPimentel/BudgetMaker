@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -20,6 +20,7 @@ import { categorizeReceipt } from '@/ai/flows/categorize-receipt';
 import { extractReceiptData } from '@/ai/flows/extract-receipt-data';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
+import type { Receipt } from '@/lib/types';
 
 const receiptSchema = z.object({
   vendor: z.string().min(1, 'Vendor is required'),
@@ -33,25 +34,44 @@ const receiptSchema = z.object({
 type AddReceiptSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  receiptToEdit?: Receipt | null;
 };
 
-export default function AddReceiptSheet({ open, onOpenChange }: AddReceiptSheetProps) {
-  const { addReceipt } = useApp();
+export default function AddReceiptSheet({ open, onOpenChange, receiptToEdit }: AddReceiptSheetProps) {
+  const { addReceipt, updateReceipt } = useApp();
   const { toast } = useToast();
   const [isCategorizing, setIsCategorizing] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isEditing = !!receiptToEdit;
 
   const form = useForm<z.infer<typeof receiptSchema>>({
     resolver: zodResolver(receiptSchema),
     defaultValues: {
       vendor: '',
       description: '',
-      amount: undefined,
+      amount: 0,
       date: new Date(),
       category: '',
     },
   });
+
+  useEffect(() => {
+    if (open) {
+      if (isEditing && receiptToEdit) {
+        form.reset(receiptToEdit);
+      } else {
+        form.reset({
+          vendor: '',
+          description: '',
+          amount: 0,
+          date: new Date(),
+          category: '',
+        });
+      }
+    }
+  }, [open, isEditing, receiptToEdit, form]);
 
   const handleAutoCategorize = useCallback(async () => {
     const vendor = form.getValues('vendor');
@@ -113,7 +133,6 @@ export default function AddReceiptSheet({ open, onOpenChange }: AddReceiptSheetP
         });
       } finally {
         setIsExtracting(false);
-        // Reset file input
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
@@ -131,18 +150,20 @@ export default function AddReceiptSheet({ open, onOpenChange }: AddReceiptSheetP
   };
 
   function onSubmit(values: z.infer<typeof receiptSchema>) {
-    addReceipt(values);
-    toast({
-      title: 'Receipt Added!',
-      description: `${values.vendor} receipt for $${values.amount.toFixed(2)} has been saved.`,
-    });
-    form.reset({
-      vendor: '',
-      description: '',
-      amount: undefined,
-      date: new Date(),
-      category: ''
-    });
+    if (isEditing && receiptToEdit) {
+      updateReceipt(receiptToEdit.id, values);
+      toast({
+        title: 'Receipt Updated!',
+        description: 'Your receipt has been successfully updated.',
+      });
+    } else {
+      addReceipt(values);
+      toast({
+        title: 'Receipt Added!',
+        description: `${values.vendor} receipt for $${values.amount.toFixed(2)} has been saved.`,
+      });
+    }
+    
     onOpenChange(false);
   }
 
@@ -150,9 +171,12 @@ export default function AddReceiptSheet({ open, onOpenChange }: AddReceiptSheetP
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-lg overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>Add a New Receipt</SheetTitle>
+          <SheetTitle>{isEditing ? 'Edit Receipt' : 'Add a New Receipt'}</SheetTitle>
           <SheetDescription>
-            Enter receipt details below or upload an image to have it automatically filled.
+            {isEditing 
+              ? 'Update the details of your receipt below.'
+              : 'Enter receipt details below or upload an image to have it automatically filled.'
+            }
           </SheetDescription>
         </SheetHeader>
         <Form {...form}>
@@ -191,7 +215,7 @@ export default function AddReceiptSheet({ open, onOpenChange }: AddReceiptSheetP
                   <FormItem>
                     <FormLabel>Amount ($)</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} />
+                      <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -259,26 +283,28 @@ export default function AddReceiptSheet({ open, onOpenChange }: AddReceiptSheetP
                 </FormItem>
               )}
             />
-            <FormItem>
-              <FormLabel>Receipt Image</FormLabel>
-              <FormControl>
-                 <Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()} disabled={isExtracting}>
-                   {isExtracting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                   {isExtracting ? 'Extracting...' : 'Upload an image'}
-                 </Button>
-              </FormControl>
-              <Input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-              <FormDescription>
-                Upload an image to automatically fill vendor, description, and amount.
-              </FormDescription>
-            </FormItem>
+            {!isEditing && (
+              <FormItem>
+                <FormLabel>Receipt Image</FormLabel>
+                <FormControl>
+                   <Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()} disabled={isExtracting}>
+                     {isExtracting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                     {isExtracting ? 'Extracting...' : 'Upload an image'}
+                   </Button>
+                </FormControl>
+                <Input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                <FormDescription>
+                  Upload an image to automatically fill vendor, description, and amount.
+                </FormDescription>
+              </FormItem>
+            )}
             <SheetFooter className="pt-4">
               <SheetClose asChild>
                 <Button type="button" variant="ghost">Cancel</Button>
               </SheetClose>
               <Button type="submit" disabled={form.formState.isSubmitting || isExtracting}>
                 {(form.formState.isSubmitting || isExtracting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Receipt
+                {isEditing ? 'Save Changes' : 'Save Receipt'}
               </Button>
             </SheetFooter>
           </form>

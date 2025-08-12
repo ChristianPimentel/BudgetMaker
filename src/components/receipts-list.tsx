@@ -6,15 +6,23 @@ import type { Receipt } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ArrowUpDown } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ArrowUpDown, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 type SortKey = keyof Omit<Receipt, 'imageUrl' | 'id' | 'description'>;
 type SortOrder = 'asc' | 'desc';
 
-export default function ReceiptsList() {
-  const { receipts, getCategoryIcon } = useApp();
+type ReceiptsListProps = {
+  onEditReceipt: (receipt: Receipt) => void;
+};
+
+export default function ReceiptsList({ onEditReceipt }: ReceiptsListProps) {
+  const { receipts, getCategoryIcon, deleteReceipt } = useApp();
+  const { toast } = useToast();
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; order: SortOrder }>({ key: 'date', order: 'desc' });
 
   const sortedReceipts = useMemo(() => {
@@ -40,6 +48,14 @@ export default function ReceiptsList() {
       order = 'desc';
     }
     setSortConfig({ key, order });
+  };
+
+  const handleDelete = (id: string) => {
+    deleteReceipt(id);
+    toast({
+      title: 'Receipt Deleted',
+      description: 'The receipt has been successfully removed.',
+    });
   };
   
   const SortableHeader = ({ children, sortKey }: { children: React.ReactNode, sortKey: SortKey }) => (
@@ -71,6 +87,7 @@ export default function ReceiptsList() {
                 <SortableHeader sortKey="vendor">Vendor</SortableHeader>
                 <SortableHeader sortKey="category">Category</SortableHeader>
                 <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="text-right w-[50px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -87,11 +104,49 @@ export default function ReceiptsList() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-mono">{currencyFormatter.format(receipt.amount)}</TableCell>
+                    <TableCell className="text-right">
+                      <AlertDialog>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => onEditReceipt(receipt)}>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will permanently delete this receipt from your records.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(receipt.id)} className="bg-destructive hover:bg-destructive/90">
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </TableCell>
                   </TableRow>
                 );
               }) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     No receipts found. Add one to get started!
                   </TableCell>
                 </TableRow>

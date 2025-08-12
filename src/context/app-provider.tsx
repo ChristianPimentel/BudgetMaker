@@ -27,6 +27,8 @@ interface AppContextType {
   receipts: Receipt[];
   budget: Budget;
   addReceipt: (receipt: Omit<Receipt, 'id'>) => void;
+  updateReceipt: (id: string, receipt: Omit<Receipt, 'id'>) => void;
+  deleteReceipt: (id: string) => void;
   updateBudget: (category: string, amount: number) => void;
   getCategoryIcon: (categoryName: string) => React.ElementType;
 }
@@ -41,6 +43,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setReceipts(prev => [{ ...receipt, id: new Date().toISOString() + Math.random() }, ...prev]);
   };
 
+  const updateReceipt = (id: string, updatedReceipt: Omit<Receipt, 'id'>) => {
+    setReceipts(prev => prev.map(r => r.id === id ? { ...updatedReceipt, id } : r));
+  };
+  
+  const deleteReceipt = (id: string) => {
+    setReceipts(prev => prev.filter(r => r.id !== id));
+  };
+
   const updateBudget = (category: string, amount: number) => {
     setBudget(prev => ({ ...prev, [category]: amount }));
   };
@@ -50,7 +60,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AppContext.Provider value={{ receipts, budget, addReceipt, updateBudget, getCategoryIcon }}>
+    <AppContext.Provider value={{ receipts, budget, addReceipt, updateReceipt, deleteReceipt, updateBudget, getCategoryIcon }}>
       {children}
     </AppContext.Provider>
   );
