@@ -23,6 +23,8 @@ export default function BudgetOverview() {
   const [reportDate, setReportDate] = React.useState('');
 
   React.useEffect(() => {
+    // This check ensures we are on the client side before creating a date.
+    // It prevents hydration mismatches between server and client rendering.
     if (typeof window !== 'undefined') {
       setReportDate(new Date().toLocaleString());
     }
@@ -34,7 +36,10 @@ export default function BudgetOverview() {
     const currentYear = new Date().getFullYear();
 
     const monthlyReceipts = receipts
-      .filter(r => r.date.getMonth() === currentMonth && r.date.getFullYear() === currentYear);
+      .filter(r => {
+        const receiptDate = new Date(r.date);
+        return receiptDate.getMonth() === currentMonth && receiptDate.getFullYear() === currentYear;
+      });
 
     return SPEND_CATEGORIES.reduce((acc, category) => {
       acc[category] = monthlyReceipts
@@ -162,7 +167,7 @@ export default function BudgetOverview() {
 
           <Separator />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-8">
             {INCOME_CATEGORIES.map((category) => {
                 const allocatedAmount = monthlyIncome * category.percentage;
                 const Icon = category.icon;
