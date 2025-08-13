@@ -19,7 +19,6 @@ export default function Dashboard() {
   const [isAddReceiptSheetOpen, setAddReceiptSheetOpen] = React.useState(false);
   const [isEditBudgetDialogOpen, setEditBudgetDialogOpen] = React.useState(false);
   const [isEditNameDialogOpen, setEditNameDialogOpen] = React.useState(false);
-  const [isClearAfterPrintOpen, setIsClearAfterPrintOpen] = React.useState(false);
   const [receiptToEdit, setReceiptToEdit] = React.useState<Receipt | null>(null);
   const { deleteAllReceipts, userName } = useApp();
   const { toast } = useToast();
@@ -41,11 +40,6 @@ export default function Dashboard() {
   };
   
   const handlePrint = () => {
-    const handleAfterPrint = () => {
-      setIsClearAfterPrintOpen(true);
-      window.removeEventListener('afterprint', handleAfterPrint);
-    };
-    window.addEventListener('afterprint', handleAfterPrint);
     window.print();
   };
 
@@ -55,11 +49,6 @@ export default function Dashboard() {
       title: 'All Expenses Cleared',
       description: 'You have a fresh start!',
     });
-  };
-  
-  const handleClearAndClose = () => {
-    handleClearAll();
-    setIsClearAfterPrintOpen(false);
   };
 
   return (
@@ -140,23 +129,6 @@ export default function Dashboard() {
       />
       <EditBudgetDialog open={isEditBudgetDialogOpen} onOpenChange={setEditBudgetDialogOpen} />
       <EditNameDialog open={isEditNameDialogOpen} onOpenChange={setEditNameDialogOpen} />
-      
-      <AlertDialog open={isClearAfterPrintOpen} onOpenChange={setIsClearAfterPrintOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Finished with your report?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Would you like to clear all data and start a new report? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>No, keep my data</AlertDialogCancel>
-            <AlertDialogAction onClick={handleClearAndClose} className="bg-destructive hover:bg-destructive/90">
-              Yes, clear everything
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
