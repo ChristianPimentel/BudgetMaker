@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc, query } from 'firebase/firestore';
+import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc, query, writeBatch, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Receipt, IncomeBudget } from '@/lib/types';
 import { CATEGORIES } from '@/lib/constants';
@@ -16,6 +16,7 @@ interface AppContextType {
   addReceipt: (receipt: Omit<Receipt, 'id' | 'date'> & { date: Date | object }) => void;
   updateReceipt: (id: string, receipt: Omit<Receipt, 'id' | 'date'> & { date: Date | object }) => void;
   deleteReceipt: (id: string) => void;
+  deleteAllReceipts: () => void;
   setMonthlyIncome: (amount: number) => void;
   getCategoryIcon: (categoryName: string) => React.ElementType;
 }
@@ -85,6 +86,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const deleteAllReceipts = async () => {
+    try {
+      const receiptsCollection = collection(db, 'receipts');
+      const querySnapshot = await getDocs(receiptsCollection);
+      const batch = writeBatch(db);
+      querySnapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+    } catch (error) {
+      console.error("Error deleting all documents: ", error);
+    }
+  };
+
   const setMonthlyIncome = async (amount: number) => {
     try {
       const budgetDocRef = doc(db, 'budget', 'user_income_budget');
@@ -99,7 +114,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AppContext.Provider value={{ receipts, monthlyIncome, addReceipt, updateReceipt, deleteReceipt, setMonthlyIncome, getCategoryIcon }}>
+    <AppContext.Provider value={{ receipts, monthlyIncome, addReceipt, updateReceipt, deleteReceipt, deleteAllReceipts, setMonthlyIncome, getCategoryIcon }}>
       {children}
     </AppContext.Provider>
   );
@@ -112,5 +127,3 @@ export const useApp = () => {
   }
   return context;
 };
-
-    
