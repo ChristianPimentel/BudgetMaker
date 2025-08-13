@@ -74,7 +74,7 @@ export default function ReceiptsList({ onEditReceipt }: ReceiptsListProps) {
   });
 
   return (
-    <Card className="print:shadow-none print:border-none print:break-before-page">
+    <Card className="print:shadow-none print:border-none">
       <CardHeader>
         <CardTitle>All Expenses</CardTitle>
         <CardDescription>A list of all your recorded expenses.</CardDescription>
