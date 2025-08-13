@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import { PlusCircle, Settings } from 'lucide-react';
+import { PlusCircle, Settings, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import BudgetOverview from './budget-overview';
 import ReceiptsList from './receipts-list';
@@ -25,10 +25,14 @@ export default function Dashboard() {
     setReceiptToEdit(receipt);
     setAddReceiptSheetOpen(true);
   };
+
+  const handlePrint = () => {
+    window.print();
+  };
   
   return (
     <div className="flex flex-col h-full bg-background">
-      <header className="flex items-center justify-between p-4 border-b bg-card shadow-sm sticky top-0 z-10">
+      <header className="flex items-center justify-between p-4 border-b bg-card shadow-sm sticky top-0 z-10 print:hidden">
         <h1 className="text-xl md:text-2xl font-bold font-headline text-primary-foreground bg-primary px-3 py-1 rounded-md shadow">Budget Maker</h1>
         <div className="flex items-center gap-2">
           <Button onClick={() => setEditBudgetDialogOpen(true)} variant="outline" size="sm">
@@ -38,6 +42,10 @@ export default function Dashboard() {
           <Button onClick={handleAddReceiptClick} size="sm">
             <PlusCircle className="mr-0 md:mr-2 h-4 w-4" />
             <span className="hidden md:inline">Add Expense</span>
+          </Button>
+           <Button onClick={handlePrint} variant="outline" size="sm">
+            <Printer className="mr-0 md:mr-2 h-4 w-4" />
+            <span className="hidden md:inline">Save as PDF</span>
           </Button>
         </div>
       </header>

@@ -60,10 +60,11 @@ export default function ReceiptsList({ onEditReceipt }: ReceiptsListProps) {
   
   const SortableHeader = ({ children, sortKey }: { children: React.ReactNode, sortKey: SortKey }) => (
     <TableHead>
-      <Button variant="ghost" onClick={() => requestSort(sortKey)} className="-ml-4">
+      <Button variant="ghost" onClick={() => requestSort(sortKey)} className="-ml-4 print:hidden">
         {children}
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
+      <span className="hidden print:inline-block font-medium">{children}</span>
     </TableHead>
   );
 
@@ -73,13 +74,13 @@ export default function ReceiptsList({ onEditReceipt }: ReceiptsListProps) {
   });
 
   return (
-    <Card>
+    <Card className="print:shadow-none print:border-none">
       <CardHeader>
         <CardTitle>All Expenses</CardTitle>
         <CardDescription>A list of all your recorded expenses.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="border rounded-md">
+        <div className="border rounded-md print:border-none">
           <Table>
             <TableHeader>
               <TableRow>
@@ -87,7 +88,7 @@ export default function ReceiptsList({ onEditReceipt }: ReceiptsListProps) {
                 <SortableHeader sortKey="vendor">Vendor</SortableHeader>
                 <SortableHeader sortKey="category">Category</SortableHeader>
                 <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="text-right w-[100px]">Actions</TableHead>
+                <TableHead className="text-right w-[100px] print:hidden">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -104,7 +105,7 @@ export default function ReceiptsList({ onEditReceipt }: ReceiptsListProps) {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-mono">{currencyFormatter.format(receipt.amount)}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right print:hidden">
                       <div className="flex justify-end items-center gap-2">
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEditReceipt(receipt)}>
                           <Pencil className="h-4 w-4" />

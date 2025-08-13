@@ -64,7 +64,7 @@ export default function BudgetOverview() {
   const totalRemaining = monthlyIncome - totalSpent;
 
   return (
-    <Card>
+    <Card className="print:shadow-none print:border-none">
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
@@ -158,7 +158,7 @@ export default function BudgetOverview() {
                 return (
                   <div key={category.name} className="space-y-2">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-muted rounded-md">
+                      <div className="p-2 bg-muted rounded-md print:bg-transparent">
                         <Icon className={`w-5 h-5 ${category.color}`} />
                       </div>
                       <div>
