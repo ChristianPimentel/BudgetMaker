@@ -103,4 +103,11 @@ body {
   .receipts-list-container {
     break-before: page;
   }
+  [data-radix-dialog-overlay], [data-radix-alert-dialog-overlay] {
+    display: none;
+  }
+  [data-radix-dialog-content], [data-radix-alert-dialog-content] {
+    display: none;
+  }
 }
+

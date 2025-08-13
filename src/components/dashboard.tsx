@@ -40,11 +40,12 @@ export default function Dashboard() {
   };
   
   const handlePrint = () => {
-    window.print();
-    // Use a timeout to allow the print dialog to appear before our dialog
-    setTimeout(() => {
+    const handleAfterPrint = () => {
       setIsClearAfterPrintOpen(true);
-    }, 1000);
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
+    window.addEventListener('afterprint', handleAfterPrint);
+    window.print();
   };
 
   const handleClearAll = () => {
