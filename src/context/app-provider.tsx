@@ -95,6 +95,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         batch.delete(doc.ref);
       });
       await batch.commit();
+      await setMonthlyIncome(initialIncome); // Also reset income
     } catch (error) {
       console.error("Error deleting all documents: ", error);
     }
