@@ -167,23 +167,23 @@ export default function BudgetOverview() {
 
           <Separator />
 
-          <div className="grid grid-cols-2 gap-x-6 gap-y-8">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-4">
             {INCOME_CATEGORIES.map((category) => {
                 const allocatedAmount = monthlyIncome * category.percentage;
                 const Icon = category.icon;
 
                 return (
-                  <div key={category.name} className="space-y-2">
+                  <div key={category.name}>
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-muted rounded-md print:bg-transparent">
                         <Icon className={`w-5 h-5 ${category.color}`} />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-lg">{category.name}</h3>
+                        <h3 className="font-semibold">{category.name}</h3>
                         <p className="text-sm text-muted-foreground">{`${(category.percentage * 100).toFixed(0)}% of income`}</p>
                       </div>
                     </div>
-                    <div className="pt-2">
+                    <div className="pt-1">
                         <span className="text-2xl font-bold">{currencyFormatter.format(allocatedAmount)}</span>
                     </div>
                   </div>
