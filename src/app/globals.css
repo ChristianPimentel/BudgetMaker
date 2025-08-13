@@ -100,4 +100,7 @@ body {
     box-shadow: none;
     border: none;
   }
+  .receipts-list-container {
+    break-before: page;
+  }
 }

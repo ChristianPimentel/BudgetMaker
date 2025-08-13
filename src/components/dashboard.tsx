@@ -85,10 +85,12 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="flex-1 p-4 md:p-6 lg:p-8 print:p-0">
+      <main className="flex-1 p-4 md:p-6 lg:p-8 print:p-0 print:overflow-visible">
         <div className="max-w-7xl mx-auto space-y-8">
           <BudgetOverview />
-          <ReceiptsList onEditReceipt={handleEditReceipt} />
+          <div className="receipts-list-container">
+            <ReceiptsList onEditReceipt={handleEditReceipt} />
+          </div>
         </div>
       </main>
 
