@@ -13,11 +13,13 @@ const initialIncome = 0;
 interface AppContextType {
   receipts: Receipt[];
   monthlyIncome: number;
+  userName: string | null;
   addReceipt: (receipt: Omit<Receipt, 'id' | 'date'> & { date: Date | object }) => void;
   updateReceipt: (id: string, receipt: Omit<Receipt, 'id' | 'date'> & { date: Date | object }) => void;
   deleteReceipt: (id: string) => void;
   deleteAllReceipts: () => void;
   setMonthlyIncome: (amount: number) => void;
+  setUserName: (name: string) => void;
   getCategoryIcon: (categoryName: string) => React.ElementType;
 }
 
@@ -26,8 +28,17 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [monthlyIncome, setMonthlyIncomeState] = useState<number>(initialIncome);
+  const [userName, setUserNameState] = useState<string | null>(null);
 
   useEffect(() => {
+    // Check if window is defined (i.e., we're on the client side)
+    if (typeof window !== 'undefined') {
+      const storedName = localStorage.getItem('userName');
+      if (storedName) {
+        setUserNameState(storedName);
+      }
+    }
+    
     const q = query(collection(db, 'receipts'));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const receiptsData: Receipt[] = [];
@@ -95,7 +106,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         batch.delete(doc.ref);
       });
       await batch.commit();
-      await setMonthlyIncome(initialIncome); // Also reset income
+      await setMonthlyIncome(0); 
     } catch (error) {
       console.error("Error deleting all documents: ", error);
     }
@@ -110,12 +121,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const setUserName = (name: string) => {
+    if (name.trim() === '') {
+      localStorage.removeItem('userName');
+      setUserNameState(null);
+    } else {
+      localStorage.setItem('userName', name);
+      setUserNameState(name);
+    }
+  };
+
   const getCategoryIcon = (categoryName: string) => {
     return CATEGORIES.find(c => c.name === categoryName)?.icon || MoreHorizontal;
   };
 
   return (
-    <AppContext.Provider value={{ receipts, monthlyIncome, addReceipt, updateReceipt, deleteReceipt, deleteAllReceipts, setMonthlyIncome, getCategoryIcon }}>
+    <AppContext.Provider value={{ receipts, monthlyIncome, userName, addReceipt, updateReceipt, deleteReceipt, deleteAllReceipts, setMonthlyIncome, setUserName, getCategoryIcon }}>
       {children}
     </AppContext.Provider>
   );

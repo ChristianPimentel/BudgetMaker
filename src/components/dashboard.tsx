@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import { PlusCircle, Settings, Printer, FilePlus } from 'lucide-react';
+import { PlusCircle, Settings, Printer, FilePlus, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import BudgetOverview from './budget-overview';
 import ReceiptsList from './receipts-list';
@@ -12,13 +12,22 @@ import type { Receipt } from '@/lib/types';
 import { useApp } from '@/context/app-provider';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import EditNameDialog from './edit-name-dialog';
 
 export default function Dashboard() {
   const [isAddReceiptSheetOpen, setAddReceiptSheetOpen] = React.useState(false);
   const [isEditBudgetDialogOpen, setEditBudgetDialogOpen] = React.useState(false);
+  const [isEditNameDialogOpen, setEditNameDialogOpen] = React.useState(false);
+  const [isClearAfterPrintOpen, setIsClearAfterPrintOpen] = React.useState(false);
   const [receiptToEdit, setReceiptToEdit] = React.useState<Receipt | null>(null);
-  const { deleteAllReceipts } = useApp();
+  const { deleteAllReceipts, userName } = useApp();
   const { toast } = useToast();
+
+  React.useEffect(() => {
+    if (userName === null) {
+      setEditNameDialogOpen(true);
+    }
+  }, [userName]);
 
   const handleAddReceiptClick = () => {
     setReceiptToEdit(null);
@@ -29,9 +38,13 @@ export default function Dashboard() {
     setReceiptToEdit(receipt);
     setAddReceiptSheetOpen(true);
   };
-
+  
   const handlePrint = () => {
     window.print();
+    // Use a timeout to allow the print dialog to appear before our dialog
+    setTimeout(() => {
+      setIsClearAfterPrintOpen(true);
+    }, 1000);
   };
 
   const handleClearAll = () => {
@@ -42,10 +55,18 @@ export default function Dashboard() {
     });
   };
   
+  const handleClearAndClose = () => {
+    handleClearAll();
+    setIsClearAfterPrintOpen(false);
+  };
+
   return (
     <div className="flex flex-col h-full bg-background">
       <header className="flex items-center justify-between p-4 border-b bg-card shadow-sm sticky top-0 z-10 print:hidden">
-        <h1 className="text-xl md:text-2xl font-bold font-headline text-primary-foreground bg-primary px-3 py-1 rounded-md shadow">Budget Maker</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-xl md:text-2xl font-bold font-headline text-primary-foreground bg-primary px-3 py-1 rounded-md shadow">Budget Maker</h1>
+          {userName && <span className="hidden md:inline text-lg font-medium text-muted-foreground">Welcome, {userName}!</span>}
+        </div>
         <div className="flex items-center gap-2">
            <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -74,6 +95,10 @@ export default function Dashboard() {
             <Settings className="mr-0 md:mr-2 h-4 w-4" />
             <span className="hidden md:inline">Set Income</span>
           </Button>
+          <Button onClick={() => setEditNameDialogOpen(true)} variant="outline" size="sm">
+             <LogOut className="mr-0 md:mr-2 h-4 w-4" />
+            <span className="hidden md:inline">Change User</span>
+          </Button>
           <Button onClick={handleAddReceiptClick} size="sm">
             <PlusCircle className="mr-0 md:mr-2 h-4 w-4" />
             <span className="hidden md:inline">Add Expense</span>
@@ -100,6 +125,24 @@ export default function Dashboard() {
         receiptToEdit={receiptToEdit} 
       />
       <EditBudgetDialog open={isEditBudgetDialogOpen} onOpenChange={setEditBudgetDialogOpen} />
+      <EditNameDialog open={isEditNameDialogOpen} onOpenChange={setEditNameDialogOpen} />
+      
+      <AlertDialog open={isClearAfterPrintOpen} onOpenChange={setIsClearAfterPrintOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Finished with your report?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Would you like to clear all data and start a new report? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No, keep my data</AlertDialogCancel>
+            <AlertDialogAction onClick={handleClearAndClose} className="bg-destructive hover:bg-destructive/90">
+              Yes, clear everything
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
