@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import { PlusCircle, Settings, Printer, FilePlus, LogOut } from 'lucide-react';
+import { PlusCircle, Settings, Printer, FilePlus, LogOut, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import BudgetOverview from './budget-overview';
 import ReceiptsList from './receipts-list';
@@ -13,6 +13,7 @@ import { useApp } from '@/context/app-provider';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import EditNameDialog from './edit-name-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 export default function Dashboard() {
   const [isAddReceiptSheetOpen, setAddReceiptSheetOpen] = React.useState(false);
@@ -69,45 +70,57 @@ export default function Dashboard() {
           {userName && <span className="hidden md:inline text-lg font-medium text-muted-foreground">Welcome, {userName}!</span>}
         </div>
         <div className="flex items-center gap-2">
-           <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <FilePlus className="mr-0 md:mr-2 h-4 w-4" />
-                <span className="hidden md:inline">New</span>
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete all
-                  of your expenses and clear your budget data.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleClearAll} className="bg-destructive hover:bg-destructive/90">
-                  Yes, clear everything
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-          <Button onClick={() => setEditBudgetDialogOpen(true)} variant="outline" size="sm">
-            <Settings className="mr-0 md:mr-2 h-4 w-4" />
-            <span className="hidden md:inline">Set Income</span>
-          </Button>
-          <Button onClick={() => setEditNameDialogOpen(true)} variant="outline" size="sm">
-             <LogOut className="mr-0 md:mr-2 h-4 w-4" />
-            <span className="hidden md:inline">Change User</span>
-          </Button>
           <Button onClick={handleAddReceiptClick} size="sm">
             <PlusCircle className="mr-0 md:mr-2 h-4 w-4" />
             <span className="hidden md:inline">Add Expense</span>
           </Button>
-           <Button onClick={handlePrint} variant="outline" size="sm">
-            <Printer className="mr-0 md:mr-2 h-4 w-4" />
-            <span className="hidden md:inline">Save as PDF</span>
-          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="h-9 w-9">
+                <MoreVertical className="h-4 w-4" />
+                <span className="sr-only">More actions</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <FilePlus className="mr-2 h-4 w-4" />
+                    <span>New Report</span>
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete all
+                      of your expenses and clear your budget data.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleClearAll} className="bg-destructive hover:bg-destructive/90">
+                      Yes, clear everything
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <DropdownMenuItem onClick={() => setEditBudgetDialogOpen(true)}>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Set Income</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setEditNameDialogOpen(true)}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Change User</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handlePrint}>
+                <Printer className="mr-2 h-4 w-4" />
+                <span>Save as PDF</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
