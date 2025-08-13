@@ -6,14 +6,16 @@ import { useApp } from '@/context/app-provider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from './ui/separator';
-import { PiggyBank, HandCoins, ShieldCheck, PartyPopper, Wallet, Landmark } from 'lucide-react';
+import { PiggyBank, HandCoins, ShieldCheck, PartyPopper, Wallet, Landmark, PieChart } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Pie, ResponsiveContainer, Cell, Tooltip } from 'recharts';
+import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 
 const INCOME_CATEGORIES = [
-  { name: 'Spending', percentage: 0.50, icon: HandCoins, color: 'text-sky-500', progressBg: '[&>div]:bg-sky-500' },
-  { name: 'Saving', percentage: 0.15, icon: PiggyBank, color: 'text-emerald-500', progressBg: '[&>div]:bg-emerald-500' },
-  { name: 'Emergency', percentage: 0.05, icon: ShieldCheck, color: 'text-amber-500', progressBg: '[&>div]:bg-amber-500' },
-  { name: 'Fun', percentage: 0.30, icon: PartyPopper, color: 'text-rose-500', progressBg: '[&>div]:bg-rose-500' },
+  { name: 'Spending', percentage: 0.50, icon: HandCoins, color: 'text-sky-500', progressBg: '[&>div]:bg-sky-500', chartColor: 'hsl(var(--chart-1))' },
+  { name: 'Saving', percentage: 0.15, icon: PiggyBank, color: 'text-emerald-500', progressBg: '[&>div]:bg-emerald-500', chartColor: 'hsl(var(--chart-3))' },
+  { name: 'Emergency', percentage: 0.05, icon: ShieldCheck, color: 'text-amber-500', progressBg: '[&>div]:bg-amber-500', chartColor: 'hsl(var(--chart-4))' },
+  { name: 'Fun', percentage: 0.30, icon: PartyPopper, color: 'text-rose-500', progressBg: '[&>div]:bg-rose-500', chartColor: 'hsl(var(--chart-2))'  },
 ]
 
 const SPEND_CATEGORIES = ['Spending', 'Fun'];
@@ -75,6 +77,27 @@ export default function BudgetOverview() {
   const flexibleProgress = flexibleSpendingBudget > 0 ? (totalFlexibleSpent / flexibleSpendingBudget) * 100 : 0;
 
   const totalRemaining = monthlyIncome - totalSpent;
+  
+  const chartData = React.useMemo(() => {
+    return SPEND_CATEGORIES.map(categoryName => ({
+      name: categoryName,
+      value: spendingByCategory[categoryName] || 0,
+      fill: INCOME_CATEGORIES.find(c => c.name === categoryName)?.chartColor || '#ccc'
+    })).filter(item => item.value > 0);
+  }, [spendingByCategory]);
+
+  const chartConfig = SPEND_CATEGORIES.reduce((acc, categoryName) => {
+    const categoryInfo = INCOME_CATEGORIES.find(c => c.name === categoryName);
+    if(categoryInfo) {
+      acc[categoryName] = {
+        label: categoryName,
+        color: categoryInfo.chartColor,
+        icon: categoryInfo.icon
+      };
+    }
+    return acc;
+  }, {} as ChartConfig);
+
 
   return (
     <Card className="print:shadow-none print:border-none">
@@ -116,58 +139,100 @@ export default function BudgetOverview() {
           
           <Separator />
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {!isSpendingOverBudget ? (
-              SPEND_CATEGORIES.map(categoryName => {
-                const categoryInfo = INCOME_CATEGORIES.find(c => c.name === categoryName);
-                if (!categoryInfo) return null;
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            <div className="space-y-4">
+              {!isSpendingOverBudget ? (
+                SPEND_CATEGORIES.map(categoryName => {
+                  const categoryInfo = INCOME_CATEGORIES.find(c => c.name === categoryName);
+                  if (!categoryInfo) return null;
 
-                const budget = monthlyIncome * categoryInfo.percentage;
-                const spent = spendingByCategory[categoryName] || 0;
-                const remaining = budget - spent;
-                const progress = budget > 0 ? (spent / budget) * 100 : 0;
-                
-                return (
-                  <div key={categoryName} className="space-y-2">
-                    <div className="flex justify-between items-baseline">
-                      <h3 className="font-semibold text-lg flex items-center gap-2">
-                        <categoryInfo.icon className={cn("w-5 h-5", categoryInfo.color)} />
-                        {categoryName}
-                      </h3>
-                      <span className={remaining >= 0 ? 'text-accent-foreground font-medium' : 'text-destructive font-medium'}>
-                        {remaining >= 0 ? `${currencyFormatter.format(remaining)} left` : `${currencyFormatter.format(Math.abs(remaining))} over`}
-                      </span>
+                  const budget = monthlyIncome * categoryInfo.percentage;
+                  const spent = spendingByCategory[categoryName] || 0;
+                  const remaining = budget - spent;
+                  const progress = budget > 0 ? (spent / budget) * 100 : 0;
+                  
+                  return (
+                    <div key={categoryName} className="space-y-2">
+                      <div className="flex justify-between items-baseline">
+                        <h3 className="font-semibold text-lg flex items-center gap-2">
+                          <categoryInfo.icon className={cn("w-5 h-5", categoryInfo.color)} />
+                          {categoryName}
+                        </h3>
+                        <span className={remaining >= 0 ? 'text-accent-foreground font-medium' : 'text-destructive font-medium'}>
+                          {remaining >= 0 ? `${currencyFormatter.format(remaining)} left` : `${currencyFormatter.format(Math.abs(remaining))} over`}
+                        </span>
+                      </div>
+                      <Progress value={progress > 100 ? 100 : progress} className={cn("h-3", categoryInfo.progressBg)} />
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>{`${currencyFormatter.format(spent)} of ${currencyFormatter.format(budget)}`}</span>
+                      </div>
                     </div>
-                    <Progress value={progress > 100 ? 100 : progress} className={cn("h-3", categoryInfo.progressBg)} />
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>{`${currencyFormatter.format(spent)} of ${currencyFormatter.format(budget)}`}</span>
-                    </div>
+                  );
+                })
+              ) : (
+                <div className="space-y-2 md:col-span-2">
+                  <div className="flex justify-between items-baseline">
+                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                      <Wallet className="w-5 h-5 text-purple-500" />
+                      Flexible Spending (Spending + Fun)
+                    </h3>
+                    <span className={remainingFlexible >= 0 ? 'text-accent-foreground font-medium' : 'text-destructive font-medium'}>
+                      {remainingFlexible >= 0 ? `${currencyFormatter.format(remainingFlexible)} left` : `${currencyFormatter.format(Math.abs(remainingFlexible))} over`}
+                    </span>
                   </div>
-                );
-              })
-            ) : (
-              <div className="space-y-2 md:col-span-2">
-                <div className="flex justify-between items-baseline">
-                  <h3 className="font-semibold text-lg flex items-center gap-2">
-                    <Wallet className="w-5 h-5 text-purple-500" />
-                    Flexible Spending (Spending + Fun)
-                  </h3>
-                  <span className={remainingFlexible >= 0 ? 'text-accent-foreground font-medium' : 'text-destructive font-medium'}>
-                    {remainingFlexible >= 0 ? `${currencyFormatter.format(remainingFlexible)} left` : `${currencyFormatter.format(Math.abs(remainingFlexible))} over`}
-                  </span>
+                  <Progress value={flexibleProgress > 100 ? 100 : flexibleProgress} className={cn("h-3", '[&>div]:bg-purple-500')} />
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>{`${currencyFormatter.format(totalFlexibleSpent)} of ${currencyFormatter.format(flexibleSpendingBudget)}`}</span>
+                    <span className="text-xs text-amber-600">{`(${currencyFormatter.format(spendingOverage)} over from Spending)`}</span>
+                  </div>
                 </div>
-                <Progress value={flexibleProgress > 100 ? 100 : flexibleProgress} className={cn("h-3", '[&>div]:bg-purple-500')} />
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>{`${currencyFormatter.format(totalFlexibleSpent)} of ${currencyFormatter.format(flexibleSpendingBudget)}`}</span>
-                  <span className="text-xs text-amber-600">{`(${currencyFormatter.format(spendingOverage)} over from Spending)`}</span>
+              )}
+            </div>
+            
+            <div className="flex flex-col items-center justify-center">
+              <ChartContainer
+                config={chartConfig}
+                className="w-full h-[200px] print:h-[180px]"
+              >
+                <ResponsiveContainer>
+                  <PieChart>
+                    <Tooltip
+                      cursor={false}
+                      content={<ChartTooltipContent
+                        hideLabel
+                        formatter={(value, name) => (
+                           <div className="flex items-center gap-2">
+                             <div className="w-2.5 h-2.5 rounded-full" style={{backgroundColor: chartConfig[name as keyof typeof chartConfig]?.color}}/>
+                             <div className="flex flex-col">
+                               <span>{chartConfig[name as keyof typeof chartConfig]?.label}</span>
+                               <span className="font-bold">{currencyFormatter.format(value as number)}</span>
+                             </div>
+                           </div>
+                        )}
+                      />}
+                    />
+                    <Pie data={chartData} dataKey="value" nameKey="name" innerRadius={50}>
+                       {chartData.map((entry) => (
+                        <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+               {chartData.length === 0 && (
+                <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-8">
+                  <PieChart className="w-8 h-8 mb-2" />
+                  <p className="text-sm">No spending data yet.</p>
+                  <p className="text-xs">Your spending breakdown will appear here.</p>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
+
 
           <Separator />
 
-          <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-4">
             {INCOME_CATEGORIES.map((category) => {
                 const allocatedAmount = monthlyIncome * category.percentage;
                 const Icon = category.icon;
@@ -195,3 +260,4 @@ export default function BudgetOverview() {
     </Card>
   );
 }
+
