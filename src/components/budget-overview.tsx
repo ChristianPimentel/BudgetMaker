@@ -6,9 +6,9 @@ import { useApp } from '@/context/app-provider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from './ui/separator';
-import { PiggyBank, HandCoins, ShieldCheck, PartyPopper, Wallet, Landmark, PieChart } from 'lucide-react';
+import { PiggyBank, HandCoins, ShieldCheck, PartyPopper, Wallet, Landmark, PieChart as PieChartIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Pie, ResponsiveContainer, Cell, Tooltip } from 'recharts';
+import { Pie, ResponsiveContainer, Cell, Tooltip, PieChart } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 
 const INCOME_CATEGORIES = [
@@ -221,7 +221,7 @@ export default function BudgetOverview() {
               </ChartContainer>
                {chartData.length === 0 && (
                 <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-8">
-                  <PieChart className="w-8 h-8 mb-2" />
+                  <PieChartIcon className="w-8 h-8 mb-2" />
                   <p className="text-sm">No spending data yet.</p>
                   <p className="text-xs">Your spending breakdown will appear here.</p>
                 </div>
