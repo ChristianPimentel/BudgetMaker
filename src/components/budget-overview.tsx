@@ -19,7 +19,15 @@ const INCOME_CATEGORIES = [
 const SPEND_CATEGORIES = ['Spending', 'Fun'];
 
 export default function BudgetOverview() {
-  const { monthlyIncome, receipts } = useApp();
+  const { monthlyIncome, receipts, userName } = useApp();
+  const [reportDate, setReportDate] = React.useState('');
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setReportDate(new Date().toLocaleString());
+    }
+  }, []);
+
 
   const spendingByCategory = React.useMemo(() => {
     const currentMonth = new Date().getMonth();
@@ -69,7 +77,11 @@ export default function BudgetOverview() {
         <div className="flex justify-between items-start">
           <div>
             <CardTitle>Monthly Budget Overview</CardTitle>
-            <CardDescription>Your financial breakdown based on your income.</CardDescription>
+            <CardDescription className="print:hidden">Your financial breakdown based on your income.</CardDescription>
+            <div className="hidden print:block pt-4">
+              <p className="text-sm">Report for: <span className="font-semibold">{userName}</span></p>
+              <p className="text-sm">Generated on: <span className="font-semibold">{reportDate}</span></p>
+            </div>
           </div>
           <div className="text-right">
             <p className="text-sm text-muted-foreground">Monthly Income</p>
