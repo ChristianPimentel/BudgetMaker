@@ -104,10 +104,9 @@ body {
     break-before: page;
   }
   [data-radix-dialog-overlay], [data-radix-alert-dialog-overlay] {
-    display: none;
+    display: none !important;
   }
   [data-radix-dialog-content], [data-radix-alert-dialog-content] {
-    display: none;
+    display: none !important;
   }
 }
-
