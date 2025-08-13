@@ -8,7 +8,7 @@ import type { Receipt, IncomeBudget } from '@/lib/types';
 import { CATEGORIES } from '@/lib/constants';
 import { MoreHorizontal } from 'lucide-react';
 
-const initialIncome = 3000;
+const initialIncome = 0;
 
 interface AppContextType {
   receipts: Receipt[];
