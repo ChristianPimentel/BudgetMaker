@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import { PlusCircle, Settings, Printer, FilePlus, LogOut, MoreVertical } from 'lucide-react';
+import { PlusCircle, Settings, Printer, FilePlus, LogOut, MoreVertical, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import BudgetOverview from './budget-overview';
 import ReceiptsList from './receipts-list';
@@ -13,12 +13,14 @@ import { useApp } from '@/context/app-provider';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import EditNameDialog from './edit-name-dialog';
+import InstructionsDialog from './instructions-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 export default function Dashboard() {
   const [isAddReceiptSheetOpen, setAddReceiptSheetOpen] = React.useState(false);
   const [isEditBudgetDialogOpen, setEditBudgetDialogOpen] = React.useState(false);
   const [isEditNameDialogOpen, setEditNameDialogOpen] = React.useState(false);
+  const [isInstructionsDialogOpen, setInstructionsDialogOpen] = React.useState(false);
   const [receiptToEdit, setReceiptToEdit] = React.useState<Receipt | null>(null);
   const { deleteAllReceipts, userName } = useApp();
   const { toast } = useToast();
@@ -72,6 +74,11 @@ export default function Dashboard() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+               <DropdownMenuItem onClick={() => setInstructionsDialogOpen(true)}>
+                <HelpCircle className="mr-2 h-4 w-4" />
+                <span>Instrucciones</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
@@ -129,6 +136,7 @@ export default function Dashboard() {
       />
       <EditBudgetDialog open={isEditBudgetDialogOpen} onOpenChange={setEditBudgetDialogOpen} />
       <EditNameDialog open={isEditNameDialogOpen} onOpenChange={setEditNameDialogOpen} />
+      <InstructionsDialog open={isInstructionsDialogOpen} onOpenChange={setInstructionsDialogOpen} />
     </div>
   );
 }
