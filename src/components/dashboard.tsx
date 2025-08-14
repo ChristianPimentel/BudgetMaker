@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import EditNameDialog from './edit-name-dialog';
 import InstructionsDialog from './instructions-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 export default function Dashboard() {
   const [isAddReceiptSheetOpen, setAddReceiptSheetOpen] = React.useState(false);
@@ -66,6 +67,20 @@ export default function Dashboard() {
             <span className="hidden md:inline">Add Expense</span>
           </Button>
 
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button onClick={() => setInstructionsDialogOpen(true)} variant="outline" size="icon" className="h-9 w-9">
+                  <HelpCircle className="h-4 w-4" />
+                  <span className="sr-only">Instrucciones</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Instrucciones</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon" className="h-9 w-9">
@@ -74,11 +89,6 @@ export default function Dashboard() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-               <DropdownMenuItem onClick={() => setInstructionsDialogOpen(true)}>
-                <HelpCircle className="mr-2 h-4 w-4" />
-                <span>Instrucciones</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
