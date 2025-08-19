@@ -2,9 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc, query, writeBatch, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import type { Receipt, IncomeBudget } from '@/lib/types';
+import type { Receipt } from '@/lib/types';
 import { CATEGORIES } from '@/lib/constants';
 import { MoreHorizontal } from 'lucide-react';
 
@@ -30,94 +28,84 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [monthlyIncome, setMonthlyIncomeState] = useState<number>(initialIncome);
   const [userName, setUserNameState] = useState<string | null>(null);
 
+  // Load initial data from localStorage on mount
   useEffect(() => {
-    // Check if window is defined (i.e., we're on the client side)
     if (typeof window !== 'undefined') {
-      const storedName = localStorage.getItem('userName');
-      if (storedName) {
-        setUserNameState(storedName);
+      try {
+        const storedName = localStorage.getItem('userName');
+        if (storedName) {
+          setUserNameState(storedName);
+        }
+
+        const storedIncome = localStorage.getItem('monthlyIncome');
+        if (storedIncome) {
+          setMonthlyIncomeState(JSON.parse(storedIncome));
+        }
+
+        const storedReceipts = localStorage.getItem('receipts');
+        if (storedReceipts) {
+          // Parse dates which are stored as strings
+          const parsedReceipts = JSON.parse(storedReceipts).map((r: Receipt) => ({
+            ...r,
+            date: new Date(r.date),
+          }));
+          setReceipts(parsedReceipts);
+        }
+      } catch (error) {
+        console.error("Error reading from localStorage", error);
       }
     }
-    
-    const q = query(collection(db, 'receipts'));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const receiptsData: Receipt[] = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        receiptsData.push({ 
-          id: doc.id, 
-          ...data,
-          date: data.date.toDate() 
-        } as Receipt);
-      });
-      setReceipts(receiptsData);
-    });
-
-    return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    const budgetDocRef = doc(db, 'budget', 'user_income_budget');
-    const unsubscribe = onSnapshot(budgetDocRef, (doc) => {
-      if (doc.exists()) {
-        const data = doc.data() as IncomeBudget;
-        setMonthlyIncomeState(data.monthlyIncome);
-      } else {
-        setDoc(budgetDocRef, { monthlyIncome: initialIncome });
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-
-  const addReceipt = async (receipt: Omit<Receipt, 'id'>) => {
+  const addReceipt = (receipt: Omit<Receipt, 'id'>) => {
     try {
-      await addDoc(collection(db, 'receipts'), receipt);
+      const newReceipt = { ...receipt, id: new Date().toISOString() };
+      const updatedReceipts = [...receipts, newReceipt];
+      setReceipts(updatedReceipts);
+      localStorage.setItem('receipts', JSON.stringify(updatedReceipts));
     } catch (error) {
-      console.error("Error adding document: ", error);
+      console.error("Error adding receipt to localStorage: ", error);
     }
   };
 
-  const updateReceipt = async (id: string, updatedReceipt: Omit<Receipt, 'id'>) => {
+  const updateReceipt = (id: string, updatedReceiptData: Omit<Receipt, 'id'>) => {
     try {
-      const receiptDoc = doc(db, 'receipts', id);
-      await updateDoc(receiptDoc, updatedReceipt);
+      const updatedReceipts = receipts.map(r => 
+        r.id === id ? { ...updatedReceiptData, id } : r
+      );
+      setReceipts(updatedReceipts);
+      localStorage.setItem('receipts', JSON.stringify(updatedReceipts));
     } catch (error) {
-      console.error("Error updating document: ", error);
+      console.error("Error updating receipt in localStorage: ", error);
     }
   };
   
-  const deleteReceipt = async (id: string) => {
+  const deleteReceipt = (id: string) => {
     try {
-      const receiptDoc = doc(db, 'receipts', id);
-      await deleteDoc(receiptDoc);
+      const updatedReceipts = receipts.filter(r => r.id !== id);
+      setReceipts(updatedReceipts);
+      localStorage.setItem('receipts', JSON.stringify(updatedReceipts));
     } catch (error) {
-      console.error("Error deleting document: ", error);
+      console.error("Error deleting receipt from localStorage: ", error);
     }
   };
 
-  const deleteAllReceipts = async () => {
+  const deleteAllReceipts = () => {
     try {
-      const receiptsCollection = collection(db, 'receipts');
-      const querySnapshot = await getDocs(receiptsCollection);
-      const batch = writeBatch(db);
-      querySnapshot.forEach((doc) => {
-        batch.delete(doc.ref);
-      });
-      await batch.commit();
-      await setMonthlyIncome(0); 
+      setReceipts([]);
+      localStorage.removeItem('receipts');
+      setMonthlyIncome(0);
     } catch (error) {
-      console.error("Error deleting all documents: ", error);
+      console.error("Error deleting all receipts from localStorage: ", error);
     }
   };
 
-  const setMonthlyIncome = async (amount: number) => {
+  const setMonthlyIncome = (amount: number) => {
     try {
-      const budgetDocRef = doc(db, 'budget', 'user_income_budget');
-      await setDoc(budgetDocRef, { monthlyIncome: amount }, { merge: true });
+      setMonthlyIncomeState(amount);
+      localStorage.setItem('monthlyIncome', JSON.stringify(amount));
     } catch (error) {
-      console.error("Error updating income: ", error);
+      console.error("Error updating income in localStorage: ", error);
     }
   };
 
