@@ -1,20 +1,33 @@
-# Use an official Node.js runtime as a parent image
-FROM node:latest
+# Use a Node.js base image
+FROM node:latest as builder
 
-# Set the working directory in the container
-WORKDIR /usr/src/app
+# Set the working directory
+WORKDIR /app
 
-# Copy package.json and package-lock.json to the working directory
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install application dependencies
+# Install dependencies
 RUN npm install
 
-# Copy the rest of the application code to the working directory
+# Copy the rest of the application files
 COPY . .
+
+# Build the Next.js application
+RUN npm run build
+
+FROM node:latest
+
+# Set the working directory
+WORKDIR /app
 
 # Expose port 3000
 EXPOSE 3000
 
-# Define the command to run the application
+# Copy the build output from the builder stage
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+
+# Start the production server
 CMD [ "npm", "start" ]
